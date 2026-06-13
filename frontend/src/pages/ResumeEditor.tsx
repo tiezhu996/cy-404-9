@@ -21,6 +21,8 @@ export function ResumeEditor() {
   const reorderSections = useResumeStore((state) => state.reorderSections);
   const toggleSection = useResumeStore((state) => state.toggleSection);
   const setActiveResume = useResumeStore((state) => state.setActiveResume);
+  const addCustomSection = useResumeStore((state) => state.addCustomSection);
+  const deleteCustomSection = useResumeStore((state) => state.deleteCustomSection);
   const profile = useProfileStore((state) => state.profile);
   const resume = useMemo(() => resumes.find((item) => item.id === id), [id, resumes]);
 
@@ -112,6 +114,16 @@ export function ResumeEditor() {
           onSorted={handleSorted}
           onToggle={(sectionId) => toggleSection(resume.id, sectionId)}
           sections={resume.sections}
+          onAddCustomSection={(title) => {
+            const newSectionId = addCustomSection(resume.id, title);
+            setActiveSectionId(newSectionId);
+          }}
+          onDeleteCustomSection={(sectionId) => {
+            if (activeSectionId === sectionId) {
+              setActiveSectionId('summary');
+            }
+            deleteCustomSection(resume.id, sectionId);
+          }}
         />
         <div className="space-y-5">
           <BasicInfoPanel value={resume.basicInfo} onChange={(patch) => updateBasicInfo(resume.id, patch)} />

@@ -130,25 +130,59 @@ export function ResumePreview({ resume, template = getTemplateById(resume.templa
           );
         }
 
-        return (
-          <section key={section.id}>
-            <SectionTitle accent={template.accent}>{section.title}</SectionTitle>
-            <div className="space-y-3">
-              {resume.educations.map((education) => (
-                <article className="flex items-start justify-between gap-4" key={education.id}>
-                  <div>
-                    <h3 className="font-semibold">{education.school}</h3>
-                    <p className="opacity-80">
-                      {education.major} · {educationLevelLabels[education.level]} · GPA {education.gpa}
-                    </p>
-                    {education.honors.length > 0 ? <p className="mt-1 text-[0.9em] opacity-75">{education.honors.join(' / ')}</p> : null}
-                  </div>
-                  <p className="shrink-0 text-[0.85em] opacity-75">{formatDateRange(education.startDate, education.endDate)}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        );
+        if (section.id === 'education') {
+          return (
+            <section key={section.id}>
+              <SectionTitle accent={template.accent}>{section.title}</SectionTitle>
+              <div className="space-y-3">
+                {resume.educations.map((education) => (
+                  <article className="flex items-start justify-between gap-4" key={education.id}>
+                    <div>
+                      <h3 className="font-semibold">{education.school}</h3>
+                      <p className="opacity-80">
+                        {education.major} · {educationLevelLabels[education.level]} · GPA {education.gpa}
+                      </p>
+                      {education.honors.length > 0 ? <p className="mt-1 text-[0.9em] opacity-75">{education.honors.join(' / ')}</p> : null}
+                    </div>
+                    <p className="shrink-0 text-[0.85em] opacity-75">{formatDateRange(education.startDate, education.endDate)}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          );
+        }
+
+        const customSection = (resume.customSections ?? []).find((cs) => cs.id === section.id);
+        if (customSection) {
+          return (
+            <section key={section.id}>
+              <SectionTitle accent={template.accent}>{section.title}</SectionTitle>
+              <div className="space-y-4">
+                {customSection.items.map((item) => (
+                  <article key={item.id}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-semibold">{item.title}</h3>
+                        {item.subtitle ? <p className="text-[0.9em] opacity-75">{item.subtitle}</p> : null}
+                      </div>
+                      {item.dateRange ? <p className="shrink-0 text-[0.85em] opacity-75">{item.dateRange}</p> : null}
+                    </div>
+                    {item.description ? <p className="mt-2 leading-6">{item.description}</p> : null}
+                    {item.bullets.length > 0 ? (
+                      <ul className="mt-2 list-disc space-y-1 pl-5 leading-6">
+                        {item.bullets.map((bullet, index) => (
+                          <li key={index}>{bullet}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          );
+        }
+
+        return null;
       })}
     </div>
   );

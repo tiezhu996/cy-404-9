@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { EducationLevel, educationLevelLabels, SkillCategory, SkillLevel, skillCategoryLabels, skillLevelLabels, SkillProficiency } from '../../types/enums';
-import { Resume, ResumeSectionType } from '../../types/resume';
+import { CustomSection, Resume, ResumeSectionType } from '../../types/resume';
 import { createId, fromLines, toLines } from '../../utils/format';
 import { Button } from './Button';
 
@@ -412,142 +412,263 @@ export function SectionEditor({ resume, sectionId, onChange }: SectionEditorProp
     );
   }
 
-  return (
-    <section className={blockClass}>
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="font-display text-2xl font-semibold">{sectionTitle(resume, sectionId)}</h2>
-        <Button
-          icon={<Plus size={16} aria-hidden />}
-          onClick={() =>
-            onChange({
-              projects: [
-                ...resume.projects,
-                {
-                  id: createId('project'),
-                  name: '新项目',
-                  role: '角色',
-                  startDate: '',
-                  endDate: '',
-                  techStack: [],
-                  description: '项目描述',
-                  outcomes: [],
-                },
-              ],
-            })
-          }
-        >
-          添加
-        </Button>
-      </div>
-      <div className="mt-5 space-y-4">
-        {resume.projects.map((item) => (
-          <div className="border border-[var(--border)] bg-[var(--bg)] p-4" key={item.id}>
-            <div className="grid gap-3 md:grid-cols-2">
-              <input
-                className={inputClass}
-                value={item.name}
-                aria-label="项目名称"
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, name: event.target.value } : project,
-                    ),
-                  })
-                }
-              />
-              <input
-                className={inputClass}
-                value={item.role}
-                aria-label="角色"
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, role: event.target.value } : project,
-                    ),
-                  })
-                }
-              />
-              <input
-                className={inputClass}
-                value={item.startDate}
-                aria-label="开始时间"
-                placeholder="开始时间"
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, startDate: event.target.value } : project,
-                    ),
-                  })
-                }
-              />
-              <input
-                className={inputClass}
-                value={item.endDate}
-                aria-label="结束时间"
-                placeholder="结束时间"
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, endDate: event.target.value } : project,
-                    ),
-                  })
-                }
-              />
+  if (sectionId === 'projects') {
+    return (
+      <section className={blockClass}>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="font-display text-2xl font-semibold">{sectionTitle(resume, sectionId)}</h2>
+          <Button
+            icon={<Plus size={16} aria-hidden />}
+            onClick={() =>
+              onChange({
+                projects: [
+                  ...resume.projects,
+                  {
+                    id: createId('project'),
+                    name: '新项目',
+                    role: '角色',
+                    startDate: '',
+                    endDate: '',
+                    techStack: [],
+                    description: '项目描述',
+                    outcomes: [],
+                  },
+                ],
+              })
+            }
+          >
+            添加
+          </Button>
+        </div>
+        <div className="mt-5 space-y-4">
+          {resume.projects.map((item) => (
+            <div className="border border-[var(--border)] bg-[var(--bg)] p-4" key={item.id}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <input
+                  className={inputClass}
+                  value={item.name}
+                  aria-label="项目名称"
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, name: event.target.value } : project,
+                      ),
+                    })
+                  }
+                />
+                <input
+                  className={inputClass}
+                  value={item.role}
+                  aria-label="角色"
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, role: event.target.value } : project,
+                      ),
+                    })
+                  }
+                />
+                <input
+                  className={inputClass}
+                  value={item.startDate}
+                  aria-label="开始时间"
+                  placeholder="开始时间"
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, startDate: event.target.value } : project,
+                      ),
+                    })
+                  }
+                />
+                <input
+                  className={inputClass}
+                  value={item.endDate}
+                  aria-label="结束时间"
+                  placeholder="结束时间"
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, endDate: event.target.value } : project,
+                      ),
+                    })
+                  }
+                />
+              </div>
+              <label className="mt-3 block space-y-2 text-sm font-medium">
+                <span>技术栈，每行一项</span>
+                <textarea
+                  className={textareaClass}
+                  value={fromLines(item.techStack)}
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, techStack: toLines(event.target.value) } : project,
+                      ),
+                    })
+                  }
+                />
+              </label>
+              <label className="mt-3 block space-y-2 text-sm font-medium">
+                <span>项目描述</span>
+                <textarea
+                  className={textareaClass}
+                  value={item.description}
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, description: event.target.value } : project,
+                      ),
+                    })
+                  }
+                />
+              </label>
+              <label className="mt-3 block space-y-2 text-sm font-medium">
+                <span>成果，每行一条</span>
+                <textarea
+                  className={textareaClass}
+                  value={fromLines(item.outcomes)}
+                  onChange={(event) =>
+                    onChange({
+                      projects: resume.projects.map((project) =>
+                        project.id === item.id ? { ...project, outcomes: toLines(event.target.value) } : project,
+                      ),
+                    })
+                  }
+                />
+              </label>
+              <Button
+                className="mt-3"
+                icon={<Trash2 size={15} aria-hidden />}
+                variant="ghost"
+                onClick={() => onChange({ projects: resume.projects.filter((project) => project.id !== item.id) })}
+              >
+                删除项目
+              </Button>
             </div>
-            <label className="mt-3 block space-y-2 text-sm font-medium">
-              <span>技术栈，每行一项</span>
-              <textarea
-                className={textareaClass}
-                value={fromLines(item.techStack)}
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, techStack: toLines(event.target.value) } : project,
-                    ),
-                  })
-                }
-              />
-            </label>
-            <label className="mt-3 block space-y-2 text-sm font-medium">
-              <span>项目描述</span>
-              <textarea
-                className={textareaClass}
-                value={item.description}
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, description: event.target.value } : project,
-                    ),
-                  })
-                }
-              />
-            </label>
-            <label className="mt-3 block space-y-2 text-sm font-medium">
-              <span>成果，每行一条</span>
-              <textarea
-                className={textareaClass}
-                value={fromLines(item.outcomes)}
-                onChange={(event) =>
-                  onChange({
-                    projects: resume.projects.map((project) =>
-                      project.id === item.id ? { ...project, outcomes: toLines(event.target.value) } : project,
-                    ),
-                  })
-                }
-              />
-            </label>
-            <Button
-              className="mt-3"
-              icon={<Trash2 size={15} aria-hidden />}
-              variant="ghost"
-              onClick={() => onChange({ projects: resume.projects.filter((project) => project.id !== item.id) })}
-            >
-              删除项目
-            </Button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  const customSection = (resume.customSections ?? []).find((section) => section.id === sectionId);
+  if (customSection) {
+    const updateCustomSection = (patch: Partial<CustomSection>) => {
+      onChange({
+        sections: resume.sections.map((section) =>
+          section.id === sectionId ? { ...section, title: patch.title ?? section.title } : section,
+        ),
+        customSections: (resume.customSections ?? []).map((section) =>
+          section.id === sectionId ? { ...section, ...patch } : section,
+        ),
+      });
+    };
+
+    const updateItem = (itemId: string, patch: Record<string, unknown>) => {
+      updateCustomSection({
+        items: customSection.items.map((item) =>
+          item.id === itemId ? { ...item, ...patch } : item,
+        ),
+      });
+    };
+
+    const addItem = () => {
+      updateCustomSection({
+        items: [
+          ...customSection.items,
+          {
+            id: createId('custom-item'),
+            title: '新条目',
+            subtitle: '',
+            dateRange: '',
+            description: '',
+            bullets: [],
+          },
+        ],
+      });
+    };
+
+    const deleteItem = (itemId: string) => {
+      updateCustomSection({
+        items: customSection.items.filter((item) => item.id !== itemId),
+      });
+    };
+
+    return (
+      <section className={blockClass}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-[var(--muted)]">模块标题</label>
+            <input
+              className={`mt-1 ${inputClass} font-display text-2xl font-semibold`}
+              value={customSection.title}
+              onChange={(e) => updateCustomSection({ title: e.target.value })}
+            />
           </div>
-        ))}
-      </div>
-    </section>
-  );
+          <Button icon={<Plus size={16} aria-hidden />} onClick={addItem}>
+            添加条目
+          </Button>
+        </div>
+        <div className="mt-5 space-y-4">
+          {customSection.items.map((item) => (
+            <div className="border border-[var(--border)] bg-[var(--bg)] p-4" key={item.id}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <input
+                  className={inputClass}
+                  value={item.title}
+                  aria-label="标题"
+                  placeholder="标题"
+                  onChange={(e) => updateItem(item.id, { title: e.target.value })}
+                />
+                <input
+                  className={inputClass}
+                  value={item.subtitle ?? ''}
+                  aria-label="副标题"
+                  placeholder="副标题"
+                  onChange={(e) => updateItem(item.id, { subtitle: e.target.value })}
+                />
+                <input
+                  className={inputClass}
+                  value={item.dateRange ?? ''}
+                  aria-label="时间范围"
+                  placeholder="时间范围，如：2020.01 - 至今"
+                  onChange={(e) => updateItem(item.id, { dateRange: e.target.value })}
+                />
+              </div>
+              <label className="mt-3 block space-y-2 text-sm font-medium">
+                <span>描述</span>
+                <textarea
+                  className={textareaClass}
+                  value={item.description}
+                  placeholder="描述内容..."
+                  onChange={(e) => updateItem(item.id, { description: e.target.value })}
+                />
+              </label>
+              <label className="mt-3 block space-y-2 text-sm font-medium">
+                <span>要点列表，每行一条</span>
+                <textarea
+                  className={textareaClass}
+                  value={fromLines(item.bullets)}
+                  placeholder="每条一行..."
+                  onChange={(e) => updateItem(item.id, { bullets: toLines(e.target.value) })}
+                />
+              </label>
+              <Button
+                className="mt-3"
+                icon={<Trash2 size={15} aria-hidden />}
+                variant="ghost"
+                onClick={() => deleteItem(item.id)}
+              >
+                删除条目
+              </Button>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return null;
 }
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { EducationLevel, SkillCategory, SkillLevel } from '../types/enums';
-import { Resume, ResumeBasicInfo, ResumeSection, ResumeSectionType } from '../types/resume';
+import { CustomSection, CustomSectionItem, Resume, ResumeBasicInfo, ResumeSection, ResumeSectionType } from '../types/resume';
 import { createId } from '../utils/format';
 import { readStorage, storageKeys, writeStorage } from '../utils/storage';
 import { useTemplateStore } from './template';
@@ -86,11 +86,20 @@ function buildResume(templateId = 'atelier', title = '我的智能简历'): Resu
         outcomes: ['首月完成 4.6 万份简历诊断', '付费转化率较旧版提升 21%'],
       },
     ],
+    customSections: [],
   };
 }
 
+function migrateResumes(resumes: Resume[]): Resume[] {
+  return resumes.map((resume) => ({
+    ...resume,
+    customSections: resume.customSections ?? [],
+  }));
+}
+
 const storedResumes = readStorage<Resume[]>(storageKeys.resumes, []);
-const initialResumes = storedResumes.length > 0 ? storedResumes : [buildResume('atelier', '产品经理求职简历')];
+const migratedResumes = migrateResumes(storedResumes);
+const initialResumes = migratedResumes.length > 0 ? migratedResumes : [buildResume('atelier', '产品经理求职简历')];
 const initialActiveResumeId = readStorage<string | null>(storageKeys.activeResumeId, initialResumes[0]?.id ?? null);
 
 function persist(state: Pick<ResumeState, 'resumes' | 'activeResumeId'>): void {
@@ -110,6 +119,12 @@ interface ResumeState {
   reorderSections: (resumeId: string, sectionIds: ResumeSectionType[]) => void;
   toggleSection: (resumeId: string, sectionId: ResumeSectionType) => void;
   replaceResumes: (resumes: Resume[], activeResumeId?: string | null) => void;
+  addCustomSection: (resumeId: string, title: string) => string;
+  deleteCustomSection: (resumeId: string, sectionId: string) => void;
+  updateCustomSection: (resumeId: string, sectionId: string, patch: Partial<CustomSection>) => void;
+  addCustomSectionItem: (resumeId: string, sectionId: string) => string;
+  deleteCustomSectionItem: (resumeId: string, sectionId: string, itemId: string) => void;
+  updateCustomSectionItem: (resumeId: string, sectionId: string, itemId: string, patch: Partial<CustomSectionItem>) => void;
 }
 
 export const useResumeStore = create<ResumeState>((set, get) => ({
@@ -142,6 +157,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       educations: source.educations.map((item) => ({ ...item, id: createId('edu') })),
       skills: source.skills.map((item) => ({ ...item, id: createId('skill') })),
       projects: source.projects.map((item) => ({ ...item, id: createId('project') })),
+      customSections: source.customSections.map((section) => ({
+        ...section,
+        id: createId('custom-section'),
+        items: section.items.map((item) => ({ ...item, id: createId('custom-item') })),
+      })),
     };
 
     set((state) => ({
@@ -169,10 +189,10 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       resumes: state.resumes.map((resume) =>
         resume.id === resumeId
           ? {
-              ...resume,
-              ...patch,
-              updatedAt: new Date().toISOString(),
-            }
+            ...resume,
+            ...patch,
+            updatedAt: new Date().toISOString(),
+          }
           : resume,
       ),
     }));
@@ -183,10 +203,10 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       resumes: state.resumes.map((resume) =>
         resume.id === resumeId
           ? {
-              ...resume,
-              basicInfo: { ...resume.basicInfo, ...patch },
-              updatedAt: new Date().toISOString(),
-            }
+            ...resume,
+            basicInfo: { ...resume.basicInfo, ...patch },
+            updatedAt: new Date().toISOString(),
+          }
           : resume,
       ),
     }));
@@ -211,19 +231,157 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       resumes: state.resumes.map((resume) =>
         resume.id === resumeId
           ? {
-              ...resume,
-              sections: resume.sections.map((section) =>
-                section.id === sectionId ? { ...section, enabled: !section.enabled } : section,
-              ),
-              updatedAt: new Date().toISOString(),
-            }
+            ...resume,
+            sections: resume.sections.map((section) =>
+              section.id === sectionId ? { ...section, enabled: !section.enabled } : section,
+            ),
+            updatedAt: new Date().toISOString(),
+          }
           : resume,
       ),
     }));
     persist(get());
   },
   replaceResumes: (resumes, activeResumeId) => {
-    set({ resumes, activeResumeId: activeResumeId ?? resumes[0]?.id ?? null });
+    const migrated = migrateResumes(resumes);
+    set({ resumes: migrated, activeResumeId: activeResumeId ?? migrated[0]?.id ?? null });
+    persist(get());
+  },
+  addCustomSection: (resumeId, title) => {
+    const sectionId = createId('custom-section');
+    set((state) => ({
+      resumes: state.resumes.map((resume) =>
+        resume.id === resumeId
+          ? {
+            ...resume,
+            sections: [...resume.sections, { id: sectionId, title, enabled: true }],
+            customSections: [
+              ...resume.customSections,
+              {
+                id: sectionId,
+                title,
+                items: [
+                  {
+                    id: createId('custom-item'),
+                    title: '新条目',
+                    subtitle: '',
+                    dateRange: '',
+                    description: '',
+                    bullets: [],
+                  },
+                ],
+              },
+            ],
+            updatedAt: new Date().toISOString(),
+          }
+          : resume,
+      ),
+    }));
+    persist(get());
+    return sectionId;
+  },
+  deleteCustomSection: (resumeId, sectionId) => {
+    set((state) => ({
+      resumes: state.resumes.map((resume) =>
+        resume.id === resumeId
+          ? {
+            ...resume,
+            sections: resume.sections.filter((section) => section.id !== sectionId),
+            customSections: resume.customSections.filter((section) => section.id !== sectionId),
+            updatedAt: new Date().toISOString(),
+          }
+          : resume,
+      ),
+    }));
+    persist(get());
+  },
+  updateCustomSection: (resumeId, sectionId, patch) => {
+    set((state) => ({
+      resumes: state.resumes.map((resume) => {
+        if (resume.id !== resumeId) return resume;
+        return {
+          ...resume,
+          sections: resume.sections.map((section) =>
+            section.id === sectionId ? { ...section, title: patch.title ?? section.title } : section,
+          ),
+          customSections: resume.customSections.map((section) =>
+            section.id === sectionId ? { ...section, ...patch } : section,
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    persist(get());
+  },
+  addCustomSectionItem: (resumeId, sectionId) => {
+    const itemId = createId('custom-item');
+    set((state) => ({
+      resumes: state.resumes.map((resume) => {
+        if (resume.id !== resumeId) return resume;
+        return {
+          ...resume,
+          customSections: resume.customSections.map((section) =>
+            section.id === sectionId
+              ? {
+                ...section,
+                items: [
+                  ...section.items,
+                  {
+                    id: itemId,
+                    title: '新条目',
+                    subtitle: '',
+                    dateRange: '',
+                    description: '',
+                    bullets: [],
+                  },
+                ],
+              }
+              : section,
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    persist(get());
+    return itemId;
+  },
+  deleteCustomSectionItem: (resumeId, sectionId, itemId) => {
+    set((state) => ({
+      resumes: state.resumes.map((resume) => {
+        if (resume.id !== resumeId) return resume;
+        return {
+          ...resume,
+          customSections: resume.customSections.map((section) =>
+            section.id === sectionId
+              ? { ...section, items: section.items.filter((item) => item.id !== itemId) }
+              : section,
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    persist(get());
+  },
+  updateCustomSectionItem: (resumeId, sectionId, itemId, patch) => {
+    set((state) => ({
+      resumes: state.resumes.map((resume) => {
+        if (resume.id !== resumeId) return resume;
+        return {
+          ...resume,
+          customSections: resume.customSections.map((section) =>
+            section.id === sectionId
+              ? {
+                ...section,
+                items: section.items.map((item) =>
+                  item.id === itemId ? { ...item, ...patch } : item,
+                ),
+              }
+              : section,
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
     persist(get());
   },
 }));

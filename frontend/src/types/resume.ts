@@ -3,7 +3,7 @@ import { Project } from './project';
 import { Skill } from './skill';
 import { WorkExperience } from './work-experience';
 
-export type ResumeSectionType = 'summary' | 'work' | 'education' | 'skills' | 'projects';
+export type ResumeSectionType = 'summary' | 'work' | 'education' | 'skills' | 'projects' | string;
 
 export interface ResumeBasicInfo {
   fullName: string;
@@ -21,6 +21,21 @@ export interface ResumeSection {
   enabled: boolean;
 }
 
+export interface CustomSectionItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  dateRange?: string;
+  description: string;
+  bullets: string[];
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  items: CustomSectionItem[];
+}
+
 export interface Resume {
   id: string;
   title: string;
@@ -34,6 +49,7 @@ export interface Resume {
   educations: Education[];
   skills: Skill[];
   projects: Project[];
+  customSections: CustomSection[];
 }
 
 export type ResumeCollection = Resume[];
